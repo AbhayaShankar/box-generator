@@ -20,6 +20,7 @@ export default function Home() {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [clickCounter, setClickCounter] = useState(0);
   const [isResetting, setIsResetting] = useState(false);
+  const [isCShape, setIsCShape] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBoxes([]);
@@ -103,7 +104,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center p-4">
-      <div className="w-full max-w-4xl">
+      <div className="w-full border border-white p-4 rounded-xl">
         <h1 className="text-2xl font-bold text-center mb-6">Box Generator</h1>
 
         <form onSubmit={handleSubmit} className="mb-8">
@@ -155,48 +156,98 @@ export default function Home() {
               </p>
               {isResetting && <p className="text-sm text-muted-foreground">Resetting boxes...</p>}
             </div>
-            <div className="flex flex-col items-center gap-2 p-4">
-              {(() => {
-                const positions = getCShapePositions(boxes.length);
-                const maxCol = Math.max(...positions.map(p => p.col));
 
-                return Array.from({ length: Math.max(...positions.map(p => p.row)) + 1 }).map((_, row) => (
-                  <div key={row} className="flex gap-2">
-                    {Array.from({ length: maxCol + 1 }).map((_, col) => {
-                      const boxIndex = boxes.findIndex(box => {
-                        const pos = positions[box.id];
-                        return pos && pos.row === row && pos.col === col;
-                      });
-
-                      const box = boxIndex !== -1 ? boxes[boxIndex] : null;
-
-                      return box ? (
-                        <div
-                          key={`${row}-${col}`}
-                          onClick={() => handleBoxClick(box.id)}
-                          className={`
-                    w-12.5 h-12.5 gap-1.25 flex items-center justify-center text-white font-medium
-                    rounded border-2 transition-colors duration-300
-                    ${box.color === 'red'
-                              ? 'bg-red-500 hover:bg-red-600 border-red-600'
-                              : 'bg-green-500 border-green-600'}
-                    ${isResetting ? 'cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}
-                  `}
-                        >
-                          {box.clickOrder > 0 && (
-                            <span className="text-white text-sm rounded-full w-5 h-5 flex items-center justify-center">
-                              {box.clickOrder}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <div key={`empty-${row}-${col}`} className="w-12.5 h-12.5 gap-1.25" />
-                      );
-                    })}
-                  </div>
-                ));
-              })()}
+            <div className="flex justify-center mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Input
+                  type="checkbox"
+                  checked={isCShape}
+                  onChange={() => setIsCShape(!isCShape)}
+                  className="w-4 h-4"
+                />
+                <span>Show C-Shape</span>
+              </label>
             </div>
+
+            {isCShape ? (
+              <div className="w-full mx-auto p-4">
+                {(() => {
+                  const positions = getCShapePositions(boxes.length);
+                  const maxRow = Math.max(...positions.map(p => p.row));
+                  const boxesPerFullRow = Math.ceil(boxes.length / 3);
+
+                  return Array.from({ length: maxRow + 1 }).map((_, row) => (
+                    <div key={row} className="flex gap-2.5 mb-2.5 last:mb-0">
+                      {Array.from({ length: boxesPerFullRow }).map((_, col) => {
+                        const boxIndex = boxes.findIndex(box => {
+                          const pos = positions[box.id];
+                          return pos && pos.row === row && pos.col === col;
+                        });
+
+                        const box = boxIndex !== -1 ? boxes[boxIndex] : null;
+
+                        if (!box) {
+                          return (
+                            <div
+                              key={`empty-${row}-${col}`}
+                              className="flex-1 aspect-square bg-transparent"
+                            />
+                          );
+                        }
+
+                        // Full width boxes take equal space, no special sizing needed
+                        return (
+                          <div
+                            key={`${row}-${col}`}
+                            onClick={() => handleBoxClick(box.id)}
+                            className={`
+                  w-[calc(100% - 30px)] flex-1 aspect-square flex items-center justify-center text-white font-medium
+                  rounded border-2 transition-all duration-300 ease-in-out
+                  ${box.color === 'red'
+                                ? 'bg-red-500 hover:bg-red-600 border-red-600 shadow-md hover:shadow-lg'
+                                : 'bg-green-500 border-green-600 shadow-md'
+                              }
+                  ${isResetting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:opacity-95 hover:scale-[1.02]'}
+                `}
+                          >
+                            {box.clickOrder > 0 && (
+                              <span className="text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center bg-black/20">
+                                {box.clickOrder}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ));
+                })()}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2.5">
+                {boxes.map((box) => (
+                  <button
+                    key={box.id}
+                    onClick={() => handleBoxClick(box.id)}
+                    disabled={isResetting}
+                    className={`
+              aspect-square w-full flex items-center justify-center text-white font-medium
+              rounded border-2 transition-colors duration-300
+              ${box.color === 'red'
+                        ? 'bg-red-500 hover:bg-red-600 border-red-600'
+                        : 'bg-green-500 border-green-600'
+                      }
+              ${isResetting ? 'cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}
+            `}
+                  >
+                    {box.clickOrder > 0 && (
+                      <span className="text-white text-sm rounded-full w-5 h-5 flex items-center justify-center">
+                        {box.clickOrder}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
